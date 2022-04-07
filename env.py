@@ -1,15 +1,17 @@
+from pydoc import cli
 from tkinter.messagebox import NO
 from gym import Env
 import numpy as np
 
 expParaList = [0.4, 1.9, 4.4, 2.5, 3.4, 0.7]
+cList = [25., 34., 50., 29., 32., 43.]
 
 # np.random.seed(42)
 
 class Site:
     def __init__(self, number):
         self.number = number
-        self.c = float(np.random.randint(low=20, high=50))
+        self.c = cList[self.number]
         self.dataPatternd()
 
     def dataStreamD(self):
@@ -52,21 +54,16 @@ class SiteEnv(Env):
         
         ### current state 
         self.state = self.reset()
-        
-        ### number of rounds
-        self.rounds = 10
-        self.current_round = 0
-        
-        ### reward collected
-        self.cumulated_reward = 0
 
-        ### rener print state info or not
+        ### rener: print state info or not
         self.renderTF = renderTF
     
     def step(self, action):
         done = False
         info = {"Hello world."}
         self.current_round += 1
+        print(action)
+        action = self.state[-1] * action / np.sum(action) ### normalize
 
         next_state = np.zeros_like(self.state)
         
@@ -75,29 +72,42 @@ class SiteEnv(Env):
         sumD, _ = self.calculateD()
         next_state[:-1] = self.state[:-1] + action + sumd
 
-        _ = np.clip(next_state[:-1] - self.cList, 0, a_max=None)
+        _ = np.clip(next_state[:-1] - self.cList, a_min=0, a_max=None)
         reward = 1 - np.sum(_)
         self.cumulated_reward += reward
-
-        self.state[-1] = sumD
-        self.state[:-1] = np.clip(next_state[:-1], 0, a_max=self.cList)
-
+        
         if self.renderTF:
             self.render(action, reward) 
+
+        self.state[-1] = sumD
+        self.state[:-1] = np.clip(next_state[:-1], a_min=0, a_max=self.cList)
+
         done = True if self.current_round == self.rounds else False
             
         return self.state, self.cumulated_reward, done, info
     
     def reset(self):
+        ### initial state
         self.state = np.zeros(self.numSites + 1)
-        sumD, _ =self.calculateD()
+        sumD, _ = self.calculateD()
         self.state[-1] = sumD
+
+        ### number of rounds
+        self.rounds = 10
+        self.current_round = 0
+        
+        ### reward collected
+        self.cumulated_reward = 0
         return self.state
 
     def render(self, action, reward):
         print(f"Round : {self.current_round}\nAction: {action}\nState: {self.state}\nCapacity: {self.cList}")
         print(f"\nReward Received: {reward}\nTotal Reward : {self.cumulated_reward}")
         print("=============================================================================")
+        if np.isnan(action)[0]:
+            print(np.isnan(action), np.isnan(action).any)
+            input()
+
 
     def calculateD(self):
         DList = []
@@ -116,10 +126,11 @@ class SiteEnv(Env):
 
 if __name__ == "__main__":
     env = SiteEnv(3, True)
-    done = False
-    state = env.reset()
-    while not done:
-        action = np.random.uniform(low=0, high=100, size=env.action_space.shape) ### random action 
-        action = state[-1] * action/np.sum(action) ### normalize
+    for i in range(10):
+        done = False
+        state = env.reset()
 
-        state, reward, done, info = env.step(action)
+        while not done:
+            action = np.random.uniform(low=0, high=100, size=env.action_space.shape) ### random action 
+
+            state, reward, done, info = env.step(action)

@@ -9,6 +9,8 @@ from torch.utils import data
 # torch.random.manual_seed(31)
 torch.set_default_dtype(torch.float64)
 
+T = 10
+
 # Fetch GPU
 device = torch.device('cpu')
 if torch.cuda.is_available():
@@ -29,7 +31,7 @@ class PiModel(nn.Module):
     def forward(self, x):
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
-        x = F.softmax(self.l3(x))
+        x = F.softmax(self.l3(x)/T, dim=-1)
 
         return x
 
@@ -71,7 +73,7 @@ class VaModel(nn.Module):
 
 def PGLoss(output, target, gamma_t, delta):
     # print(target)
-    loss = - torch.sum((torch.log(output) * target) * gamma_t * delta)
+    loss = - torch.sum((torch.log(output)) * gamma_t * delta)
 
     return loss
 
@@ -109,9 +111,8 @@ class PiApproximationWithNN():
     def __call__(self,s) -> int:
         # TODO: implement this method
         self.model.eval()
-        output = self.model(torch.tensor(s)).detach().numpy()
-        action = np.random.choice(self.a_dim, p=output)
-        # print(output, action)
+        action = self.model(torch.tensor(s)).detach().numpy()
+        # print(action)
         # input()
         return action
 
@@ -123,7 +124,7 @@ class PiApproximationWithNN():
         delta: G-v(S_t,w)
         """
         # TODO: implement this method
-        a = F.one_hot(torch.tensor(a), num_classes=self.a_dim)
+        # a = F.one_hot(torch.tensor(a), num_classes=self.a_dim)
         a = torch.tensor(a, dtype=torch.float64)
         self.model.train()
         TrainModel(self.model, s, a, self.op, gamma_t, delta, PG=True)

@@ -1,21 +1,18 @@
-import sys
 import numpy as np
-import gym
+from env import SiteEnv 
 from matplotlib import pyplot as plt
 
 from reinforce import REINFORCE, PiApproximationWithNN, Baseline, VApproximationWithNN
 
 def test_reinforce(with_baseline):
-    env = gym.make("CartPole-v0")
+    env = SiteEnv(3, True)
     gamma = 1.
     alpha = 3e-4
 
     pi = PiApproximationWithNN(
         env.observation_space.shape[0],
-        env.action_space.n,
+        env.action_space.shape[0],
         alpha)
-    print(type(env.action_space), env.action_space)
-    input()
 
     if with_baseline:
         B = VApproximationWithNN(
@@ -24,7 +21,7 @@ def test_reinforce(with_baseline):
     else:
         B = Baseline(0.)
 
-    return REINFORCE(env,gamma,200,pi,B)
+    return REINFORCE(env,gamma,1000,pi,B)
 
 if __name__ == "__main__":
     num_iter = 5
@@ -36,6 +33,8 @@ if __name__ == "__main__":
         without_baseline.append(training_progress)
     without_baseline = np.mean(without_baseline,axis=0)
 
+    print("without baseline finished")
+    input()
     # Test REINFORCE with baseline
     with_baseline = []
     for _ in range(num_iter):
