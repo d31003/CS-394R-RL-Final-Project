@@ -1,5 +1,3 @@
-from pydoc import cli
-from tkinter.messagebox import NO
 from gym import Env
 import numpy as np
 
@@ -7,6 +5,7 @@ expParaList = [0.4, 1.9, 4.4, 2.5, 3.4, 0.7]
 cList = [25., 34., 50., 29., 32., 43.]
 
 # np.random.seed(42)
+
 
 class Site:
     def __init__(self, number):
@@ -31,7 +30,7 @@ class Site:
         return d
 
 class SiteEnv(Env):
-    def __init__(self, numSites, renderTF=False):
+    def __init__(self, numSites, renderTF=False, numList=20):
         ### generate sites
         self.numSites = numSites
         cList = []
@@ -50,19 +49,28 @@ class SiteEnv(Env):
         
         ### continuous action space, shape: (numSites,)
         ### constraint: action should sum  to \sum_i site[i].D
-        self.action_space = np.zeros(numSites)
+        self.action_space = np.zeros(numList)
+        self.generateActionList()
         
         ### current state 
         self.state = self.reset()
 
         ### rener: print state info or not
         self.renderTF = renderTF
+
+    def generateActionList(self, randomSeed=42):
+        np.random.seed(randomSeed)
+        act = np.random.rand(self.action_space.shape[0], self.numSites)
+        self.actionList = act/act.sum(axis=1)[:, np.newaxis]
+        # print("Action space: ", self.actionList.shape)
+        # print("Action List: ", self.actionList)
     
     def step(self, action):
         done = False
         info = {"Hello world."}
         self.current_round += 1
-        print(action)
+        action = self.actionList[action] ### choose action
+        print("Action: ", action)
         action = self.state[-1] * action / np.sum(action) ### normalize
 
         next_state = np.zeros_like(self.state)
@@ -104,8 +112,8 @@ class SiteEnv(Env):
         print(f"Round : {self.current_round}\nAction: {action}\nState: {self.state}\nCapacity: {self.cList}")
         print(f"\nReward Received: {reward}\nTotal Reward : {self.cumulated_reward}")
         print("=============================================================================")
-        if np.isnan(action)[0]:
-            print(np.isnan(action), np.isnan(action).any)
+        if np.any(np.isnan(action)):
+            print(np.isnan(action), np.any(np.isnan(action)))
             input()
 
 

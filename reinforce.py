@@ -9,17 +9,17 @@ from torch.utils import data
 # torch.random.manual_seed(31)
 torch.set_default_dtype(torch.float64)
 
-T = 10
-
 # Fetch GPU
 device = torch.device('cpu')
 if torch.cuda.is_available():
     device = torch.device('cuda')
     print("Found GPU.")
 
+
 def init_weights(m):
     if type(m) == nn.Linear:
         nn.init.xavier_uniform_(m.weight)
+
 
 class PiModel(nn.Module):
     def __init__(self, d_in, d_out):
@@ -31,7 +31,7 @@ class PiModel(nn.Module):
     def forward(self, x):
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
-        x = F.softmax(self.l3(x)/T, dim=-1)
+        x = F.softmax(self.l3(x))
 
         return x
 
@@ -56,7 +56,6 @@ def TrainModel(NNmodel, feature, label, op, gamma_t, delta, PG, criterion=torch.
 
     return 
 
-
 class VaModel(nn.Module):
     def __init__(self, d_in, d_out):
         super(VaModel, self).__init__()
@@ -70,10 +69,11 @@ class VaModel(nn.Module):
         x = self.l3(x)
 
         return x
+        
 
 def PGLoss(output, target, gamma_t, delta):
     # print(target)
-    loss = - torch.sum((torch.log(output)) * gamma_t * delta)
+    loss = - torch.sum((torch.log(output) * target) * gamma_t * delta)
 
     return loss
 
@@ -111,8 +111,9 @@ class PiApproximationWithNN():
     def __call__(self,s) -> int:
         # TODO: implement this method
         self.model.eval()
-        action = self.model(torch.tensor(s)).detach().numpy()
-        # print(action)
+        output = self.model(torch.tensor(s)).detach().numpy()
+        action = np.random.choice(self.a_dim, p=output)
+        # print(output, action)
         # input()
         return action
 
@@ -124,7 +125,7 @@ class PiApproximationWithNN():
         delta: G-v(S_t,w)
         """
         # TODO: implement this method
-        # a = F.one_hot(torch.tensor(a), num_classes=self.a_dim)
+        a = F.one_hot(torch.tensor(a), num_classes=self.a_dim)
         a = torch.tensor(a, dtype=torch.float64)
         self.model.train()
         TrainModel(self.model, s, a, self.op, gamma_t, delta, PG=True)
@@ -229,4 +230,5 @@ def REINFORCE(
             pi.update(sList[t], aList[t], gamma**t, delta)
 
     return GList
+
 
