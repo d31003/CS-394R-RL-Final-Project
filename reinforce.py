@@ -227,7 +227,7 @@ def REINFORCE(
             # print("SARS ", sList[-2], a, r_, s_)
             # input()
 
-        GList.append(env.cumulated_reward)
+        # GList.append(env.cumulated_reward)
 
         T = len(aList) ## 0 ~ T-1
 
@@ -236,10 +236,9 @@ def REINFORCE(
             G = 0
             for k in range(t+1, T+1):
                 G += gamma**(k-t-1) * rList[k]
-            # if t == 0:
-                # GList.append(G) ## store G0
+            if t == 0:
+                GList.append(G) ## store G0
                 # print("Episode: ", episode, "G0: ", G)
-
             
             delta = G - V(sList[t])
             # print(sList[t], aList[t])

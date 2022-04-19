@@ -6,9 +6,11 @@ from benchmarks import RandomPolicy, OraclePolicy
 
 from reinforce import REINFORCE, PiApproximationWithNN, Baseline, VApproximationWithNN
 
-epiround = 500
-gamma = 0.2
-renderTF = False
+epiround = 100
+gamma = 0.95
+renderTF = True
+num_iter = 1
+
 
 def test_reinforce(with_baseline):
     env = SiteEnv(3, renderTF)
@@ -51,7 +53,6 @@ def test_oracle():
     return REINFORCE(env,gamma,epiround,OraclePi,B, True)
 
 if __name__ == "__main__":
-    num_iter = 1
 
     # Random Policy
     random = []
@@ -60,6 +61,7 @@ if __name__ == "__main__":
         random.append(training_progress)
     random = np.mean(random,axis=0)
     print("Random:", np.mean(random))
+    input()
 
     # Oracle Policy
     oracle = []
@@ -68,7 +70,7 @@ if __name__ == "__main__":
         oracle.append(training_progress)
     oracle = np.mean(oracle,axis=0)
     print("Oracle:", np.mean(oracle))
-    # input()
+    input()
 
     # Test REINFORCE with baseline
     with_baseline = []

@@ -2,8 +2,12 @@ from pydoc import render_doc
 from gym import Env
 import numpy as np
 
-expParaList = [0.4, 1.9, 4.4, 2.5, 3.4, 0.7]
+expParaList = [3.1, 2.9, 4.4, 2.5, 3.4, 4.7]
 cList = [25., 34., 50., 29., 32., 43.]
+
+actionList = np.array([
+    [1,0,0], [0,1,0], [0,0,1], [0.5,0.5,0], [0.5,0,0.5], [0,0.5,0.5]
+])
 
 class Site:
     def __init__(self, number):
@@ -47,8 +51,9 @@ class SiteEnv(Env):
         
         ### continuous action space, shape: (numSites,)
         ### constraint: action should sum  to \sum_i site[i].D
-        self.action_space = np.zeros(numActList)
         self.generateActionList()
+        self.action_space = np.zeros(self.actionList.shape[0])
+
         
         ### current state 
         self.state = self.reset()
@@ -57,17 +62,28 @@ class SiteEnv(Env):
         self.renderTF = renderTF
 
     def generateActionList(self, randomSeed=42):
-        np.random.seed(randomSeed)
-        act = np.random.randint(low=0, high=4, size=(self.action_space.shape[0], self.numSites))
-        self.actionList = act/act.sum(axis=1)[:, np.newaxis]
+        # np.random.seed(randomSeed)
+        # act = np.random.randint(low=0, high=4, size=(self.action_space.shape[0], self.numSites))
+        # self.actionList = act/act.sum(axis=1)[:, np.newaxis]
+        self.actionList = actionList
         # print("Action Space: ", self.actionList.shape)
-        print("Action List:\n", self.actionList)
+        # print("Action List:\n", self.actionList)
         # input()
 
     def rewardStructure(self, action):
         _ = self.state[:-1] + action + self.sumd
-        _ = np.clip(_ - self.cList, a_min=0, a_max=None)
-        reward = 2 - np.sum(_)
+        reward = 0
+        noExceed = True
+        for i in range(self.numSites):
+            if _[i] > self.cList[i]: # exceed buffer
+                reward -= 1
+                noExceed = False
+        if noExceed:
+            reward += 0
+            if self.current_round == self.rounds:
+                reward += (self.numSites + 2)
+        # _ = np.clip(_ - self.cList, a_min=0, a_max=None)
+        # reward = 2 - np.sum(_)
         return reward
 
     def step(self, actionNum):
@@ -84,7 +100,6 @@ class SiteEnv(Env):
         next_state[:-1] = self.state[:-1] + action + self.sumd
         next_state[-1] = sumD
         next_state[:-1] = np.clip(next_state[:-1], a_min=0, a_max=self.cList)
-        self.state = next_state
 
         ### Reward
         reward = self.rewardStructure(action)
@@ -98,6 +113,8 @@ class SiteEnv(Env):
         self.sumd = self.calculated()
         # if done:
         #     self.render(action, actionNum, reward)
+        
+        self.state = next_state
 
         return next_state, reward, done, info
     
@@ -110,7 +127,7 @@ class SiteEnv(Env):
         self.state = newState
 
         ### number of rounds
-        self.rounds = 10
+        self.rounds = 15
         self.current_round = 0
         
         ### reward collected
