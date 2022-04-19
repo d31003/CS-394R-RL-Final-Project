@@ -61,15 +61,14 @@ class SiteEnv(Env):
         act = np.random.randint(low=0, high=4, size=(self.action_space.shape[0], self.numSites))
         self.actionList = act/act.sum(axis=1)[:, np.newaxis]
         # print("Action Space: ", self.actionList.shape)
-        # print("Action List:\n", self.actionList)
+        print("Action List:\n", self.actionList)
         # input()
 
-    def rewardStructure(self, next_state):
-        _ = np.clip(next_state[:-1] - self.cList, a_min=0, a_max=None)
+    def rewardStructure(self, action):
+        _ = self.state[:-1] + action + self.sumd
+        _ = np.clip(_ - self.cList, a_min=0, a_max=None)
         reward = 2 - np.sum(_)
-
         return reward
-
 
     def step(self, actionNum):
         done = False
@@ -81,25 +80,22 @@ class SiteEnv(Env):
         next_state = np.zeros_like(self.state)
         
         ### transition
-        sumd = self.calculated()
         sumD, _ = self.calculateD()
-        next_state[:-1] = self.state[:-1] + action + sumd
+        next_state[:-1] = self.state[:-1] + action + self.sumd
         next_state[-1] = sumD
         next_state[:-1] = np.clip(next_state[:-1], a_min=0, a_max=self.cList)
         self.state = next_state
 
-        reward = self.rewardStructure(next_state)
-
+        ### Reward
+        reward = self.rewardStructure(action)
         self.cumulated_reward += reward
         
         if self.renderTF: # and self.current_round == self.rounds:
             self.render(action, actionNum, reward)
 
-
-
-
+        ### Done or not
         done = True if self.current_round == self.rounds  else False
-
+        self.sumd = self.calculated()
         # if done:
         #     self.render(action, actionNum, reward)
 
@@ -109,6 +105,7 @@ class SiteEnv(Env):
         ### initial state
         newState = np.zeros(self.numSites + 1)
         sumD, _ = self.calculateD()
+        self.sumd = self.calculated()
         newState[-1] = sumD
         self.state = newState
 

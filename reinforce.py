@@ -188,7 +188,8 @@ def REINFORCE(
     gamma:float,
     num_episodes:int,
     pi:PiApproximationWithNN,
-    V:Baseline) -> Iterable[float]:
+    V:Baseline,
+    oracle=False) -> Iterable[float]:
     """
     implement REINFORCE algorithm with and without baseline.
 
@@ -215,7 +216,10 @@ def REINFORCE(
         done = False
 
         while not done:
-            a = pi(sList[-1])
+            if not oracle:
+                a = pi(sList[-1])
+            else:
+                a = pi(sList[-1], env)
             s_, r_, done, _ = env.step(a)
             rList.append(r_)
             sList.append(s_)
@@ -234,7 +238,6 @@ def REINFORCE(
                 G += gamma**(k-t-1) * rList[k]
             # if t == 0:
                 # GList.append(G) ## store G0
-
                 # print("Episode: ", episode, "G0: ", G)
 
             
