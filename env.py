@@ -1,11 +1,9 @@
+from pydoc import render_doc
 from gym import Env
 import numpy as np
 
 expParaList = [0.4, 1.9, 4.4, 2.5, 3.4, 0.7]
 cList = [25., 34., 50., 29., 32., 43.]
-
-# np.random.seed(42)
-
 
 class Site:
     def __init__(self, number):
@@ -14,7 +12,7 @@ class Site:
         self.dataPatternd()
 
     def dataStreamD(self):
-        D = np.random.uniform(low=0.01*self.c, high=0.15*self.c)
+        D = np.random.uniform(low=0.01*self.c, high=0.05*self.c)
         self.D = D
         return D
 
@@ -30,7 +28,7 @@ class Site:
         return d
 
 class SiteEnv(Env):
-    def __init__(self, numSites, renderTF=False, numList=20):
+    def __init__(self, numSites, renderTF=False, numActList=5):
         ### generate sites
         self.numSites = numSites
         cList = []
@@ -49,7 +47,7 @@ class SiteEnv(Env):
         
         ### continuous action space, shape: (numSites,)
         ### constraint: action should sum  to \sum_i site[i].D
-        self.action_space = np.zeros(numList)
+        self.action_space = np.zeros(numActList)
         self.generateActionList()
         
         ### current state 
@@ -60,17 +58,24 @@ class SiteEnv(Env):
 
     def generateActionList(self, randomSeed=42):
         np.random.seed(randomSeed)
-        act = np.random.rand(self.action_space.shape[0], self.numSites)
+        act = np.random.randint(low=0, high=4, size=(self.action_space.shape[0], self.numSites))
         self.actionList = act/act.sum(axis=1)[:, np.newaxis]
-        # print("Action space: ", self.actionList.shape)
-        # print("Action List: ", self.actionList)
-    
-    def step(self, action):
+        # print("Action Space: ", self.actionList.shape)
+        # print("Action List:\n", self.actionList)
+        # input()
+
+    def rewardStructure(self, next_state):
+        _ = np.clip(next_state[:-1] - self.cList, a_min=0, a_max=None)
+        reward = 2 - np.sum(_)
+
+        return reward
+
+
+    def step(self, actionNum):
         done = False
         info = {"Hello world."}
         self.current_round += 1
-        action = self.actionList[action] ### choose action
-        print("Action: ", action)
+        action = self.actionList[actionNum] ### choose action
         action = self.state[-1] * action / np.sum(action) ### normalize
 
         next_state = np.zeros_like(self.state)
@@ -79,26 +84,33 @@ class SiteEnv(Env):
         sumd = self.calculated()
         sumD, _ = self.calculateD()
         next_state[:-1] = self.state[:-1] + action + sumd
+        next_state[-1] = sumD
+        next_state[:-1] = np.clip(next_state[:-1], a_min=0, a_max=self.cList)
+        self.state = next_state
 
-        _ = np.clip(next_state[:-1] - self.cList, a_min=0, a_max=None)
-        reward = 1 - np.sum(_)
+        reward = self.rewardStructure(next_state)
+
         self.cumulated_reward += reward
         
-        if self.renderTF:
-            self.render(action, reward) 
+        if self.renderTF: # and self.current_round == self.rounds:
+            self.render(action, actionNum, reward)
 
-        self.state[-1] = sumD
-        self.state[:-1] = np.clip(next_state[:-1], a_min=0, a_max=self.cList)
 
-        done = True if self.current_round == self.rounds else False
-            
-        return self.state, self.cumulated_reward, done, info
+
+
+        done = True if self.current_round == self.rounds  else False
+
+        # if done:
+        #     self.render(action, actionNum, reward)
+
+        return next_state, reward, done, info
     
     def reset(self):
         ### initial state
-        self.state = np.zeros(self.numSites + 1)
+        newState = np.zeros(self.numSites + 1)
         sumD, _ = self.calculateD()
-        self.state[-1] = sumD
+        newState[-1] = sumD
+        self.state = newState
 
         ### number of rounds
         self.rounds = 10
@@ -106,10 +118,10 @@ class SiteEnv(Env):
         
         ### reward collected
         self.cumulated_reward = 0
-        return self.state
+        return newState
 
-    def render(self, action, reward):
-        print(f"Round : {self.current_round}\nAction: {action}\nState: {self.state}\nCapacity: {self.cList}")
+    def render(self, action, actionNum, reward):
+        print(f"Round : {self.current_round}\nAction: {action, actionNum}\nState: {self.state}\nCapacity: {self.cList}")
         print(f"\nReward Received: {reward}\nTotal Reward : {self.cumulated_reward}")
         print("=============================================================================")
         if np.any(np.isnan(action)):

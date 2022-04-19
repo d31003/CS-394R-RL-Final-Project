@@ -8,6 +8,7 @@ from torch.utils import data
 
 # torch.random.manual_seed(31)
 torch.set_default_dtype(torch.float64)
+T = 0.05
 
 # Fetch GPU
 device = torch.device('cpu')
@@ -31,7 +32,7 @@ class PiModel(nn.Module):
     def forward(self, x):
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
-        x = F.softmax(self.l3(x))
+        x = F.softmax(self.l3(x/T), dim=-1)
 
         return x
 
@@ -56,6 +57,7 @@ def TrainModel(NNmodel, feature, label, op, gamma_t, delta, PG, criterion=torch.
 
     return 
 
+
 class VaModel(nn.Module):
     def __init__(self, d_in, d_out):
         super(VaModel, self).__init__()
@@ -69,7 +71,7 @@ class VaModel(nn.Module):
         x = self.l3(x)
 
         return x
-        
+
 
 def PGLoss(output, target, gamma_t, delta):
     # print(target)
@@ -112,9 +114,13 @@ class PiApproximationWithNN():
         # TODO: implement this method
         self.model.eval()
         output = self.model(torch.tensor(s)).detach().numpy()
+        if not np.isclose(np.sum(output), 1.0):
+            print('Output is not prob:', output, np.sum(output))
+            input()
         action = np.random.choice(self.a_dim, p=output)
-        # print(output, action)
-        # input()
+        # if np.random.rand() <= 0.05:
+        #     print(s, output, action)
+        #     input()
         return action
 
     def update(self, s, a, gamma_t, delta):
@@ -125,8 +131,7 @@ class PiApproximationWithNN():
         delta: G-v(S_t,w)
         """
         # TODO: implement this method
-        a = F.one_hot(torch.tensor(a), num_classes=self.a_dim)
-        a = torch.tensor(a, dtype=torch.float64)
+        a = F.one_hot(torch.tensor(a), num_classes=self.a_dim).detach().type(torch.float64).numpy()
         self.model.train()
         TrainModel(self.model, s, a, self.op, gamma_t, delta, PG=True)
 
@@ -145,6 +150,7 @@ class Baseline(object):
 
     def update(self,s,G):
         pass
+
 
 class VApproximationWithNN(Baseline):
     def __init__(self,
@@ -207,12 +213,17 @@ def REINFORCE(
         rList = [0]
         aList = []
         done = False
+
         while not done:
             a = pi(sList[-1])
             s_, r_, done, _ = env.step(a)
             rList.append(r_)
             sList.append(s_)
             aList.append(a)
+            # print("SARS ", sList[-2], a, r_, s_)
+            # input()
+
+        GList.append(env.cumulated_reward)
 
         T = len(aList) ## 0 ~ T-1
 
@@ -221,11 +232,15 @@ def REINFORCE(
             G = 0
             for k in range(t+1, T+1):
                 G += gamma**(k-t-1) * rList[k]
-            if t == 0:
-                GList.append(G) ## store G0
-                print(episode, G)
+            # if t == 0:
+                # GList.append(G) ## store G0
+
+                # print("Episode: ", episode, "G0: ", G)
+
             
             delta = G - V(sList[t])
+            # print(sList[t], aList[t])
+            # input()
             V.update(sList[t], delta)
             pi.update(sList[t], aList[t], gamma**t, delta)
 
