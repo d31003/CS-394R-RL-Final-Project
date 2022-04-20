@@ -8,7 +8,7 @@ from torch.utils import data
 
 # torch.random.manual_seed(31)
 torch.set_default_dtype(torch.float64)
-T = 0.05
+T = 1
 
 # Fetch GPU
 device = torch.device('cpu')
@@ -116,6 +116,7 @@ class PiApproximationWithNN():
         output = self.model(torch.tensor(s)).detach().numpy()
         if not np.isclose(np.sum(output), 1.0):
             print('Output is not prob:', output, np.sum(output))
+            print(s)
             input()
         action = np.random.choice(self.a_dim, p=output)
         # if np.random.rand() <= 0.05:

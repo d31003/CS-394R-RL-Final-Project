@@ -1,12 +1,13 @@
+from multiprocessing.dummy import active_children
 from pydoc import render_doc
 from gym import Env
 import numpy as np
 
-expParaList = [3.1, 2.9, 4.4, 2.5, 3.4, 4.7]
-cList = [25., 34., 50., 29., 32., 43.]
+expParaList = [0.9, 1.9, 2.4, 2.5, 3.4, 4.7]
+cList = [25., 34., 27., 29., 32., 43.]
 
 actionList = np.array([
-    [1,0,0], [0,1,0], [0,0,1], [0.5,0.5,0], [0.5,0,0.5], [0,0.5,0.5]
+    [1,0,0], [0,1,0], [0,0,1], [0.5,0.5,0], [0.5,0,0.5], [0,0.5,0.5], [1/3, 1/3, 1/3]
 ])
 
 class Site:
@@ -58,7 +59,7 @@ class SiteEnv(Env):
         ### current state 
         self.state = self.reset()
 
-        ### rener: print state info or not
+        ### render: print state info or not
         self.renderTF = renderTF
 
     def generateActionList(self, randomSeed=42):
@@ -81,7 +82,7 @@ class SiteEnv(Env):
         if noExceed:
             reward += 0
             if self.current_round == self.rounds:
-                reward += (self.numSites + 2)
+                reward += (self.numSites)
         # _ = np.clip(_ - self.cList, a_min=0, a_max=None)
         # reward = 2 - np.sum(_)
         return reward
@@ -90,7 +91,10 @@ class SiteEnv(Env):
         done = False
         info = {"Hello world."}
         self.current_round += 1
-        action = self.actionList[actionNum] ### choose action
+        if isinstance(actionNum, int):
+            action = self.actionList[actionNum] ### choose action
+        else:
+            action = actionNum
         action = self.state[-1] * action / np.sum(action) ### normalize
 
         next_state = np.zeros_like(self.state)

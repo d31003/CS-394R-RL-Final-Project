@@ -6,10 +6,10 @@ from benchmarks import RandomPolicy, OraclePolicy
 
 from reinforce import REINFORCE, PiApproximationWithNN, Baseline, VApproximationWithNN
 
-epiround = 100
-gamma = 0.95
-renderTF = True
-num_iter = 1
+epiround = 300
+gamma = 0.99
+renderTF = False
+num_iter = 10
 
 
 def test_reinforce(with_baseline):
@@ -35,7 +35,7 @@ def test_random():
 
     RandomPi = RandomPolicy(
         env.observation_space.shape[0],
-        env.action_space.shape[0])
+        env.numSites)
 
     B = Baseline(0.)
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         random.append(training_progress)
     random = np.mean(random,axis=0)
     print("Random:", np.mean(random))
-    input()
+    # input()
 
     # Oracle Policy
     oracle = []
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         oracle.append(training_progress)
     oracle = np.mean(oracle,axis=0)
     print("Oracle:", np.mean(oracle))
-    input()
+    # input()
 
     # Test REINFORCE with baseline
     with_baseline = []
@@ -92,10 +92,10 @@ if __name__ == "__main__":
 
     # Plot the experiment result
     fig,ax = plt.subplots()
-    ax.plot(np.arange(len(random)),random, label='Random')
-    ax.plot(np.arange(len(oracle)),oracle, label='Oracle')
-    ax.plot(np.arange(len(without_baseline)),without_baseline, label='without baseline')
-    ax.plot(np.arange(len(with_baseline)),with_baseline, label='with baseline')
+    ax.plot(np.arange(len(random)),random, label='Random', c='g')
+    ax.plot(np.arange(len(oracle)),oracle, label='Oracle', c='r')
+    ax.plot(np.arange(len(without_baseline)),without_baseline, label='without baseline', c='black')
+    ax.plot(np.arange(len(with_baseline)),with_baseline, label='with baseline', c='b')
 
     ax.set_xlabel('iteration')
     ax.set_ylabel('G_0')
