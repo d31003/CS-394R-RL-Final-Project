@@ -1,8 +1,8 @@
 # CS394R Project: A Mobile Edge Computing Resource Allocation Problem
 Final project for CS 394R Reinforcement Learning: Theory and Practice
 
-## Group meneber: 
-Oguzhan Akcin (oa5983), Po-han Li(pl22767)
+## Group member: 
+Oguzhan Akcin (oa5983), Po-han Li (pl22767)
 
 ### Dependencies
 |package|version|
@@ -15,6 +15,11 @@ Oguzhan Akcin (oa5983), Po-han Li(pl22767)
 
 ### Run model
 
+```python test_reinforce.py```
+
+Modify the number of sites, data arriving rate, reward structure and capacities of the environment in env.py.
+
+Modify maximum episode, discount factor, and iteration in test_reinforce.py.
 
 ### Notes
 test_reinforce.py and reinforce.py are modified from course programming assignment.
