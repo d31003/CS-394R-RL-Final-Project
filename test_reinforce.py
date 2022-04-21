@@ -6,7 +6,7 @@ from benchmarks import RandomPolicy, OraclePolicy
 
 from reinforce import REINFORCE, PiApproximationWithNN, Baseline, VApproximationWithNN
 
-epiround = 300
+epiround = 1000
 gamma = 0.99
 renderTF = False
 num_iter = 10
