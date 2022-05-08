@@ -23,6 +23,7 @@ Modify maximum episode, discount factor, and iteration in test_reinforce.py.
 
 
 ### Link of Presentation
+[YouTube Link](https://youtu.be/ONTPyLf70sY)
 
 ### Notes
 test_reinforce.py and reinforce.py are modified from course programming assignment.
